@@ -1,4 +1,6 @@
-# 导入包
+# YOLO object detection using a webcam
+# Exact same demo as the read from disk, but instead of disk a webcam is used.
+# import the necessary packages
 import numpy as np
 # import argparse
 import imutils
@@ -7,17 +9,10 @@ import cv2
 import os
 import PySimpleGUI as sg
 
-i_vid = r'videos\002.mp4'
+i_vid = r'videos\007.mp4'
 o_vid = r'output\car_chase_01_out.mp4'
 y_path = r'yolo-coco'
-sg.ChangeLookAndFeel('Reddit') # Couleur
-logo_dict = {
-        "nac-logo" : "rainy.png",
-    }
-## logo_img_widget = window["-WEATHER-IMG-"]
-
-
-# 初始界面
+sg.ChangeLookAndFeel('LightGreen')
 layout = 	[
 		[sg.Text('Test vidéo pour YOLOv4 - NAC', size=(28,1), font=('Helvetica',18),text_color='#1c86ee' ,justification='left'),\
              sg.Image(r'images\nac-logo.png',key = "-WEATHER-IMG-",size=(100, 50))],
@@ -42,8 +37,6 @@ write_to_disk = values['_DISK_']
 use_webcam = values['_WEBCAM_']
 args = values
 
-## {'input': 'videos\\002.mp4', 'Browse': '', 'output': 'output\\car_chase_01_out.mp4', 'Save As...': '', 'yolo': 'yolo-coco', 'Browse0': '', 'confidence': 0.5, 'threshold': 0.3, '_WEBCAM_': True, '_DISK_': False}
-
 win.Close()
 
 
@@ -52,15 +45,16 @@ gui_confidence = args["confidence"]
 gui_threshold = args["threshold"]
 # load the COCO class labels our YOLO model was trained on
 labelsPath = os.path.sep.join([args["yolo"], "coco.names"])
-LABELS = open(labelsPath).read().strip().split("\n")
+LABELS = open(labelsPath).read().strip().split("\n") #打开标签
 
-# initialize a list of colors to represent each possible class label
+# initialize a list of colors to represent each possible class label 
+# 每个对象配备了不一样的颜色，以便在图片中标记时便于区分。
 np.random.seed(42)
 COLORS = np.random.randint(0, 255, size=(len(LABELS), 3),
 	dtype="uint8")
 
 # derive the paths to the YOLO weights and model configuration
-weightsPath = os.path.sep.join([args["yolo"], "custom-yolov4-detector_final.weights"])
+weightsPath = os.path.sep.join([args["yolo"], "custom-yolov4-detector_best.weights"])
 configPath = os.path.sep.join([args["yolo"], "custom-yolov4-detector.cfg"])
 
 # load our YOLO object detector trained on COCO dataset (80 classes)
@@ -100,7 +94,7 @@ while True:
 		grabbed, frame = cap.read()
 	else:
 		grabbed, frame = vs.read()
-       
+
 	# if the frame was not grabbed, then we have reached the end
 	# of the stream
 	if not grabbed:
@@ -126,11 +120,11 @@ while True:
 	confidences = []
 	classIDs = []
 
-	# loop over each of the layer outputs
+	# loop over each of the layer outputs 循环提取每个输出层
 	for output in layerOutputs:
-		# loop over each of the detections
+		# loop over each of the detections 循环提取每个框
 		for detection in output:
-			# extract the class ID and confidence (i.e., probability)
+			# extract the class ID and confidence (i.e., probability) 提取当前目标的类 ID 和置信度
 			# of the current object detection
 			scores = detection[5:]
 			classID = np.argmax(scores)
@@ -138,39 +132,51 @@ while True:
 
 			# filter out weak predictions by ensuring the detected
 			# probability is greater than the minimum probability
+            # 通过确保检测概率大于最小概率来过滤弱预测
 			if confidence > gui_confidence:
 				# scale the bounding box coordinates back relative to
 				# the size of the image, keeping in mind that YOLO
 				# actually returns the center (x, y)-coordinates of
 				# the bounding box followed by the boxes' width and
 				# height
+                # 将边界框坐标相对于图像的大小进行缩放，YOLO 返回的是边界框的中心(x, y)坐标，
+                # 后面是边界框的宽度和高度
 				box = detection[0:4] * np.array([W, H, W, H])
 				(centerX, centerY, width, height) = box.astype("int")
 
 				# use the center (x, y)-coordinates to derive the top
 				# and and left corner of the bounding box
+                # 转换出边框左上角坐标
 				x = int(centerX - (width / 2))
 				y = int(centerY - (height / 2))
 
 				# update our list of bounding box coordinates,
 				# confidences, and class IDs
+                # 更新边界框坐标、置信度和类 id 的列表
+                # boxes：对象的边界框
+                # confidences ：YOLO 分配给对象的置信度值，较低的置信度值表示该对象可能不是网络认为的对象。
+                # classIDs：检测到的对象的类标签
 				boxes.append([x, y, int(width), int(height)])
 				confidences.append(float(confidence))
 				classIDs.append(classID)
 
 	# apply non-maxima suppression to suppress weak, overlapping
-	# bounding boxes
+	# bounding boxes 非最大值抑制，确定唯一边框
+    # bboxes：一组边框
+    # scores：一组对应的置信度
+    # score_threshold：置信度的阈值
+    # nms_threshold：非最大抑制的阈值
 	idxs = cv2.dnn.NMSBoxes(boxes, confidences, gui_confidence, gui_threshold)
 
-	# ensure at least one detection exists
+	# ensure at least one detection exists 确定每个对象至少有一个框存在
 	if len(idxs) > 0:
-		# loop over the indexes we are keeping
+		# loop over the indexes we are keeping 循环画出保存的边框
 		for i in idxs.flatten():
-			# extract the bounding box coordinates
+			# extract the bounding box coordinates 提取坐标和宽度
 			(x, y) = (boxes[i][0], boxes[i][1])
 			(w, h) = (boxes[i][2], boxes[i][3])
 
-			# draw a bounding box rectangle and label on the frame
+			# draw a bounding box rectangle and label on the frame 画出边框和标签
 			color = [int(c) for c in COLORS[classIDs[i]]]
 			cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
 			text = "{}: {:.4f}".format(LABELS[classIDs[i]],
