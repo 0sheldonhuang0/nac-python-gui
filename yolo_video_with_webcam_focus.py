@@ -9,7 +9,7 @@ import cv2
 import os
 import PySimpleGUI as sg
 
-i_vid = r'videos\007.mp4'
+i_vid = r'videos\003_x264.mp4'
 o_vid = r'output\car_chase_01_out.mp4'
 y_path = r'yolo-coco'
 sg.ChangeLookAndFeel('LightGreen')
@@ -54,7 +54,7 @@ COLORS = np.random.randint(0, 255, size=(len(LABELS), 3),
 	dtype="uint8")
 
 # derive the paths to the YOLO weights and model configuration
-weightsPath = os.path.sep.join([args["yolo"], "custom-yolov4-detector_best.weights"])
+weightsPath = os.path.sep.join([args["yolo"], "custom-yolov4-detector_final.weights"])
 configPath = os.path.sep.join([args["yolo"], "custom-yolov4-detector.cfg"])
 
 # load our YOLO object detector trained on COCO dataset (80 classes)
@@ -167,6 +167,13 @@ while True:
     # score_threshold：置信度的阈值
     # nms_threshold：非最大抑制的阈值
 	idxs = cv2.dnn.NMSBoxes(boxes, confidences, gui_confidence, gui_threshold)
+	targetPosition = []
+    
+	print('idxs.flatten() 的长度为 %d，内容为 %s' %(len(idxs.flatten()),idxs.flatten()))
+	print(boxes)
+	print(confidences)
+
+	time.sleep(5)
 
 	# ensure at least one detection exists 确定每个对象至少有一个框存在
 	if len(idxs) > 0:
@@ -175,6 +182,10 @@ while True:
 			# extract the bounding box coordinates 提取坐标和宽度
 			(x, y) = (boxes[i][0], boxes[i][1])
 			(w, h) = (boxes[i][2], boxes[i][3])
+          
+			targetPosition.append([x,y,w,h]) # 每一帧的目标数量和位置
+# 			stri = "the length of (%s) is %d, %d, %d, %d" %('runoob',x,y,w,h)
+			print(targetPosition)
 
 			# draw a bounding box rectangle and label on the frame 画出边框和标签
 			color = [int(c) for c in COLORS[classIDs[i]]]
@@ -204,13 +215,16 @@ while True:
 
 	if not win_started:
 		win_started = True
+		sg.SetOptions(text_justification='Center') 
 		layout = [
-			[sg.Text('Yolo Playback in PySimpleGUI Window', size=(30,1))],
+			[sg.Text('Yolo Playback in PySimpleGUI Window', size=(30,1), justification='center')],
 			[sg.Image(data=imgbytes, key='_IMAGE_')],
-			[sg.Text('Confidence'),
+			[sg.Text('Confiance'),
 			 sg.Slider(range=(0, 1), orientation='h', resolution=.1, default_value=.5, size=(15, 15), key='confidence'),
-			sg.Text('Threshold'),
+			sg.Text('Seuil'),
 			 sg.Slider(range=(0, 1), orientation='h', resolution=.1, default_value=.3, size=(15, 15), key='threshold')],
+          [sg.Text('Les positions des cibles'),
+           sg.Text(size=(10, 2), font=('Helvetica', 20), justification='center', key='-OUTPUT-')],
 			[sg.Exit()]
 		]
 		win = sg.Window('YOLO Output',
