@@ -8,11 +8,13 @@ import time
 import cv2
 import os
 import PySimpleGUI as sg
+import pandas as pd
+
 
 i_vid = r'videos\003_x264.mp4'
 o_vid = r'output\car_chase_01_out.mp4'
 y_path = r'yolo-coco'
-sg.ChangeLookAndFeel('LightGreen')
+sg.ChangeLookAndFeel('Reddit')
 layout = 	[
 		[sg.Text('Test vidéo pour YOLOv4 - NAC', size=(28,1), font=('Helvetica',18),text_color='#1c86ee' ,justification='left'),\
              sg.Image(r'images\nac-logo.png',key = "-WEATHER-IMG-",size=(100, 50))],
@@ -28,7 +30,7 @@ layout = 	[
 
 win = sg.Window('Test vidéo pour YOLOv4 - NAC',
 				default_element_size=(21,1),
-				text_justification='right',
+				text_justification='left',
 				auto_size_text=False).Layout(layout)
 event, values = win.Read()
 if event is None or event =='Cancel':
@@ -94,6 +96,10 @@ while True:
 		grabbed, frame = cap.read()
 	else:
 		grabbed, frame = vs.read()
+		# 分辨率-宽度
+		zone_width = int(vs.get(cv2.CAP_PROP_FRAME_WIDTH))/4
+		# 分辨率-高度
+		zone_height = int(vs.get(cv2.CAP_PROP_FRAME_HEIGHT))/2
 
 	# if the frame was not grabbed, then we have reached the end
 	# of the stream
@@ -168,12 +174,15 @@ while True:
     # nms_threshold：非最大抑制的阈值
 	idxs = cv2.dnn.NMSBoxes(boxes, confidences, gui_confidence, gui_threshold)
 	targetPosition = []
+	targetDetailNumber = []
+	zone_info = []
     
-	print('idxs.flatten() 的长度为 %d，内容为 %s' %(len(idxs.flatten()),idxs.flatten()))
-	print(boxes)
-	print(confidences)
+# 	print('idxs.flatten() 的长度为 %d，内容为 %s' %(len(idxs.flatten()),idxs.flatten()))
+# 	print(boxes)
+# 	print(confidences)
 
-	time.sleep(5)
+
+#	time.sleep(5)
 
 	# ensure at least one detection exists 确定每个对象至少有一个框存在
 	if len(idxs) > 0:
@@ -182,10 +191,11 @@ while True:
 			# extract the bounding box coordinates 提取坐标和宽度
 			(x, y) = (boxes[i][0], boxes[i][1])
 			(w, h) = (boxes[i][2], boxes[i][3])
-          
-			targetPosition.append([x,y,w,h]) # 每一帧的目标数量和位置
+            
+			targetDetailNumber.append(classIDs[i])
+			targetPosition.append([x+w/2,y+h/2]) # 每一帧的目标数量和位置
 # 			stri = "the length of (%s) is %d, %d, %d, %d" %('runoob',x,y,w,h)
-			print(targetPosition)
+#			print(targetPosition)
 
 			# draw a bounding box rectangle and label on the frame 画出边框和标签
 			color = [int(c) for c in COLORS[classIDs[i]]]
@@ -216,26 +226,78 @@ while True:
 	if not win_started:
 		win_started = True
 		sg.SetOptions(text_justification='Center') 
-		layout = [
-			[sg.Text('Yolo Playback in PySimpleGUI Window', size=(30,1), justification='center')],
+        
+        # 左边栏
+		left_col =  [
+			[sg.Text('Observer votre NAC par Yolov4 et OpenCV-Python', size=(50,1), justification='center')],
 			[sg.Image(data=imgbytes, key='_IMAGE_')],
-			[sg.Text('Confiance'),
-			 sg.Slider(range=(0, 1), orientation='h', resolution=.1, default_value=.5, size=(15, 15), key='confidence'),
-			sg.Text('Seuil'),
-			 sg.Slider(range=(0, 1), orientation='h', resolution=.1, default_value=.3, size=(15, 15), key='threshold')],
-          [sg.Text('Les positions des cibles'),
-           sg.Text(size=(10, 2), font=('Helvetica', 20), justification='center', key='-OUTPUT-')],
+			[sg.Text('Confiance',size=(8, 1), font=('Helvetica', 10)),
+			sg.Slider(range=(0, 1), orientation='h', resolution=.1, default_value=.5, size=(20, 15), key='confidence'),
+			sg.Text('Seuil',size=(8, 1), font=('Helvetica', 10)),
+			 sg.Slider(range=(0, 1), orientation='h', resolution=.1, default_value=.3, size=(20, 15), key='threshold')],
 			[sg.Exit()]
 		]
+
+        # 右边栏
+		right_col = [[sg.Text('Les positions des cibles',size=(20, 2), font=('Helvetica', 15), justification='center'),
+			sg.Text(size=(20, 2), font=('Helvetica', 15), justification='center', key='_POSITION_')],
+			[sg.Text('Le nombre de cible total',size=(20, 2), font=('Helvetica', 15), justification='center'),
+			sg.Text(size=(20, 2), font=('Helvetica', 15), justification='center', key='_TARGETNUM_')],
+			[sg.Text('Maintenant, il y a',size=(15, 2), font=('Helvetica', 12), justification='left'),
+			sg.Text(size=(2, 2), font=('Helvetica', 15), justification='center', key='_TARGET_DETAIL_NUM_'),
+			sg.Text(size=(10, 2), font=('Helvetica', 15), justification='center', key='_TARGET_NAME_'),
+			sg.Text("dans l'écran.",size=(15, 2), font=('Helvetica', 12), justification='left')
+            ],
+            [sg.Output(size=(60,10))]
+            ]
+        
+        
+		layout = [
+			[sg.Column(left_col, element_justification='c'), sg.VSeperator(),
+			sg.Column(right_col, element_justification='c')]
+		]
+        
 		win = sg.Window('YOLO Output',
 						default_element_size=(14, 1),
-						text_justification='right',
+						text_justification='left',
 						auto_size_text=False).Layout(layout).Finalize()
 		image_elem = win.FindElement('_IMAGE_')
+		position_elem = win.FindElement('_POSITION_')
+		number_elem = win.FindElement('_TARGETNUM_')
+		targetDetailNumber_elem = win.FindElement('_TARGET_DETAIL_NUM_')
+		targetName_elem = win.FindElement('_TARGET_NAME_')
 	else:
 		image_elem.Update(data=imgbytes)
+		position_elem.Update(targetPosition)
+		number_elem.Update(len(targetPosition))
+		targetDetailNumber_elem.Update(pd.value_counts(targetDetailNumber)[0])
+		targetName_elem.Update(LABELS[0])
+    
+	for coordinate in targetPosition:
+		if coordinate[0] <= zone_width:
+			if coordinate[1] <= zone_height:
+				zone_info.append('Zone 1A')
+			else:
+				zone_info.append('Zone 1B')
+		elif  coordinate[0] <= zone_width*2 and coordinate[0] > zone_height:    
+			if coordinate[1] <= zone_height:
+				zone_info.append('Zone 2A')
+			else:
+				zone_info.append('Zone 2B')
+		elif  coordinate[0] <= zone_width*3 and coordinate[0] > zone_height*2:    
+			if coordinate[1] <= zone_height:
+				zone_info.append('Zone 3A')
+			else:
+				zone_info.append('Zone 3B')
+		elif  coordinate[0] <= zone_width*4 and coordinate[0] > zone_height*3:    
+			if coordinate[1] <= zone_height:
+				zone_info.append('Zone 4A')
+			else:
+				zone_info.append('Zone 4B')
 
 	event, values = win.Read(timeout=0)
+	print(zone_info)
+    
 	if event is None or event == 'Exit':
 		break
 	gui_confidence = values['confidence']
