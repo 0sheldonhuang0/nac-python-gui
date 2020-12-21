@@ -195,7 +195,8 @@ while True:
 			targetDetailNumber.append(classIDs[i])
 			targetPosition.append([x+w/2,y+h/2]) # 每一帧的目标数量和位置
 # 			stri = "the length of (%s) is %d, %d, %d, %d" %('runoob',x,y,w,h)
-#			print(targetPosition)
+# 			print(targetPosition)
+# 			print(targetDetailNumber)
 
 			# draw a bounding box rectangle and label on the frame 画出边框和标签
 			color = [int(c) for c in COLORS[classIDs[i]]]
@@ -267,10 +268,12 @@ while True:
 		targetDetailNumber_elem = win.FindElement('_TARGET_DETAIL_NUM_')
 		targetName_elem = win.FindElement('_TARGET_NAME_')
 	else:
+        
 		image_elem.Update(data=imgbytes)
 		position_elem.Update(targetPosition)
 		number_elem.Update(len(targetPosition))
-		targetDetailNumber_elem.Update(pd.value_counts(targetDetailNumber)[0])
+# 		targetDetailNumber_elem.Update(pd.value_counts(targetDetailNumber)[0])
+		targetDetailNumber_elem.Update("pd.value_counts(targetDetailNumber)[0]")
 		targetName_elem.Update(LABELS[0])
     
 	for coordinate in targetPosition:
