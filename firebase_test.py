@@ -3,7 +3,7 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 cred = credentials.Certificate(r'fir-rtc-aff50-firebase-adminsdk-4r1i0-f00f6b52fe.json')
-#firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred)
 
 db = firestore.client()  # this connects to our Firestore database
 collection = db.collection('places')  # opens 'places' collection
