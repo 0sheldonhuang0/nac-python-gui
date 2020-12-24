@@ -1,5 +1,6 @@
 # 只有以下的 pyrebase4 的库可以正常运作
 # https://github.com/nhorvath/Pyrebase4
+# pip install pyrebase4
 import pyrebase 
 import PySimpleGUI as sg
 import binascii
@@ -57,13 +58,26 @@ try:
     # Get a reference to the database service
     db = firebase.database()
     
-    # data to save
-    data = {
-        "name": "Mortimer 'Morty' Smith"
+    # Exemple de données 数据样例
+    userUniqueId = "sheldonhuang1994_7822"
+    dataCible = {
+            "1459361875000":{
+                "poisson":[[111,222],[333,444]],
+                "tortue":[[555,666],[777,888]],
+                }
+            }
+
+    
+    dataUser = {
+        "setup":{"time_update":300},
+        "zone_name":["manger","libre","manger","libre",
+                     "manger","libre","manger","libre"],
     }
     
     # Pass the user's idToken to the push method
-    results = db.child("users").push(data, user['idToken'])
+    # 使用用户的 ID Tocken 上传 json 数据
+    db.child("cibles").child(userUniqueId).push(dataCible, user['idToken'])
+    db.child("users").child(userUniqueId).set(dataUser, user['idToken'])
 except:
     sg.popup('发生了一些错误，可能是用户名/密码错误！')
 
