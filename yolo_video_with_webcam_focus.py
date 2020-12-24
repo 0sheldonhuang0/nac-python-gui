@@ -9,7 +9,7 @@ import cv2
 import os
 import PySimpleGUI as sg
 import pandas as pd
-
+# import firebase_login
 
 i_vid = r'videos\003_x264.mp4'
 o_vid = r'output\car_chase_01_out.mp4'
@@ -25,7 +25,7 @@ layout = 	[
 		[sg.Text('Seuil'), sg.Slider(range=(0,1), orientation='h', resolution=.1, default_value=.3, size=(15,15), key='threshold')],
 		[sg.Text(' '*8), sg.Checkbox('Utiliser la webcam', key='_WEBCAM_')],
 		[sg.Text(' '*8), sg.Checkbox('Écrire sur le disque', key='_DISK_')],
-		[sg.OK(), sg.Cancel()]
+		[sg.Button('Connecxion avec votre compte'),sg.OK(), sg.Cancel()]
 			]
 
 win = sg.Window('Test vidéo pour YOLOv4 - NAC',
@@ -35,6 +35,8 @@ win = sg.Window('Test vidéo pour YOLOv4 - NAC',
 event, values = win.Read()
 if event is None or event =='Cancel':
 	exit()
+# if event == 'Connecxion avec votre compte':
+# 	firebase_login
 write_to_disk = values['_DISK_']
 use_webcam = values['_WEBCAM_']
 args = values
