@@ -1,9 +1,12 @@
+# Seule le bibliothèque pyrebase4 suivante
+# peut fonctionner
 # 只有以下的 pyrebase4 的库可以正常运作
 # https://github.com/nhorvath/Pyrebase4
 # pip install pyrebase4
 import pyrebase 
 import PySimpleGUI as sg
 import binascii
+import pickle
 import sys
 
 # config = {
@@ -25,7 +28,9 @@ def firebaseLogin():
       "measurementId": "G-267VZRPMW4"
     };
     firebase = pyrebase.initialize_app(firebaseConfig)
-
+    # enregistrer des données 保存数据
+    pickle.dump(firebase,open('firebase_info.txt','wb'))
+    
     sg.ChangeLookAndFeel('Reddit')
     layout = 	[
     		[sg.Text('Connectez-vous à votre compte', size=(30,1), font=('Helvetica',12),text_color='#1c86ee' ,justification='left'),\
@@ -45,39 +50,15 @@ def firebaseLogin():
     UserEmail = values['_USER_EMAIL_']
     UserPassword = values['_USER_PASSWORD_']
     
-        # Get a reference to the auth service
+    # Obtenir une référence au service d'auth
+    # 获取对用户验证的引用
     auth = firebase.auth()
     
     try:
-        # Log the user in
+        # Connexion 登录
         user = auth.sign_in_with_email_and_password(UserEmail, UserPassword)
         sg.popup('登录成功！欢迎', UserEmail)
-        
-        ## 测试设计数据结构（未完成）
-        ## https://firebase.google.com/docs/database/web/structure-data?authuser=0
-        # Get a reference to the database service
-        db = firebase.database()
-        
-        # Exemple de données 数据样例
-        userUniqueId = "sheldonhuang1994_7822"
-        dataCible = {
-                "1459361875000":{
-                    "poisson":[[111,222],[333,444]],
-                    "tortue":[[555,666],[777,888]],
-                    }
-                }
-    
-        
-        dataUser = {
-            "setup":{"time_update":300},
-            "zone_name":["manger","libre","manger","libre",
-                         "manger","libre","manger","libre"],
-        }
-        
-        # Pass the user's idToken to the push method
-        # 使用用户的 ID Tocken 上传 json 数据
-        db.child("cibles").child(userUniqueId).push(dataCible, user['idToken'])
-        db.child("users").child(userUniqueId).set(dataUser, user['idToken'])
+        pickle.dump(user,open('user_info.txt','wb'))
     except:
         sg.popup('发生了一些错误，可能是用户名/密码错误！')
     
@@ -86,3 +67,33 @@ def firebaseLogin():
     
     win.Close()
     
+
+def firebaseUploadData():
+    # Lire des données 读取数据
+    firebase = pickle.load(open('firebase_info.txt','rb'))
+    user = pickle.load(open('user_info.txt','rb'))
+    # 测试设计数据结构（未完成）
+    # https://firebase.google.com/docs/database/web/structure-data?authuser=0
+    # Obtenir une référence au service de base de données
+    # 获取对数据库服务的引用
+    db = firebase.database()
+    
+    # Exemple de données 数据样例
+    userUniqueId = "sheldonhuang1994_7822"
+    dataCible = {
+            "1459361875000":{
+                "poisson":[[111,222],[333,444]],
+                "tortue":[[555,666],[777,888]],
+                }
+            }
+    
+    dataUser = {
+        "setup":{"time_update":300},
+        "zone_name":["manger","libre","manger","libre",
+                      "manger","libre","manger","libre"],
+    }
+    
+    # Utiliser ID Tocken d'utilisateur pour télécharger des données json
+    # 使用用户的 ID Tocken 上传 json 数据
+    db.child("cibles").child(userUniqueId).push(dataCible, user['idToken'])
+    db.child("users").child(userUniqueId).set(dataUser, user['idToken'])

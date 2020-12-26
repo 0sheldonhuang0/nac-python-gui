@@ -2,7 +2,6 @@
 # Exact same demo as the read from disk, but instead of disk a webcam is used.
 # import the necessary packages
 import numpy as np
-# import argparse
 import imutils
 import time
 import cv2
@@ -90,8 +89,10 @@ except:
 
 # loop over frames from the video file stream
 win_started = False
+loopTimes = 1; loopInterval = 50;
 if use_webcam:
 	cap = cv2.VideoCapture(0)
+
 while True:
 	# read the next frame from the file or webcam
 	if use_webcam:
@@ -184,7 +185,7 @@ while True:
 # 	print(confidences)
 
 
-#	time.sleep(5)
+
 
 	# ensure at least one detection exists 确定每个对象至少有一个框存在
 	if len(idxs) > 0:
@@ -226,7 +227,7 @@ while True:
 		writer.write(frame)
 	imgbytes = cv2.imencode('.png', frame)[1].tobytes()  # ditto
 
-	if not win_started:
+	if not win_started: # if win_started is not None
 		win_started = True
 		sg.SetOptions(text_justification='Center') 
         
@@ -251,6 +252,9 @@ while True:
 			sg.Text(size=(10, 2), font=('Helvetica', 15), justification='center', key='_TARGET_NAME_'),
 			sg.Text("dans l'écran.",size=(15, 2), font=('Helvetica', 12), justification='left')
             ],
+            [sg.Text('LoopTimes',size=(15, 2), font=('Helvetica', 12), justification='left'),
+			sg.Text(size=(2, 2), font=('Helvetica', 15), justification='center', key='_LOOP_TIMES_')
+            ],
             [sg.Output(size=(60,10))]
             ]
         
@@ -269,6 +273,7 @@ while True:
 		number_elem = win.FindElement('_TARGETNUM_')
 		targetDetailNumber_elem = win.FindElement('_TARGET_DETAIL_NUM_')
 		targetName_elem = win.FindElement('_TARGET_NAME_')
+		loopTimes_elem = win.FindElement('_LOOP_TIMES_')
 	else:
 		image_elem.Update(data=imgbytes)
 		position_elem.Update(targetPosition)
@@ -278,6 +283,7 @@ while True:
 		else:
 		    targetDetailNumber_elem.Update(pd.value_counts(targetDetailNumber)[0])
 		targetName_elem.Update(LABELS[0])
+		loopTimes_elem.Update(loopTimes)
     
 	for coordinate in targetPosition:
 		if coordinate[0] <= zone_width:
@@ -308,8 +314,14 @@ while True:
 		break
 	gui_confidence = values['confidence']
 	gui_threshold = values['threshold']
-
-
+    
+	# 每隔 time.sleep(1)，识别一次
+	time.sleep(1)
+	# 每隔 loopInterval，向 firebase 保存数据
+	loopTimes=loopTimes+1
+	if loopTimes % loopInterval == 0:
+		firebase_login.firebaseUploadData()
+        
 win.Close()
 
 # release the file pointers
