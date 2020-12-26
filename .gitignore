@@ -1,3 +1,5 @@
 custom-yolov4-detector_final.weights
 *.mp4
 fir-rtc*.json
+firebase_info.txt
+user_info.txt
