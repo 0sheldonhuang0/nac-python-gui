@@ -9,7 +9,7 @@ import cv2
 import os
 import PySimpleGUI as sg
 import pandas as pd
-# import firebase_login
+import firebase_login
 
 i_vid = r'videos\003_x264.mp4'
 o_vid = r'output\car_chase_01_out.mp4'
@@ -35,8 +35,8 @@ win = sg.Window('Test vidéo pour YOLOv4 - NAC',
 event, values = win.Read()
 if event is None or event =='Cancel':
 	exit()
-# if event == 'Connecxion avec votre compte':
-# 	firebase_login
+if event == 'Connecxion avec votre compte':
+ 	firebase_login.firebaseLogin()
 write_to_disk = values['_DISK_']
 use_webcam = values['_WEBCAM_']
 args = values
@@ -270,12 +270,13 @@ while True:
 		targetDetailNumber_elem = win.FindElement('_TARGET_DETAIL_NUM_')
 		targetName_elem = win.FindElement('_TARGET_NAME_')
 	else:
-        
 		image_elem.Update(data=imgbytes)
 		position_elem.Update(targetPosition)
 		number_elem.Update(len(targetPosition))
-# 		targetDetailNumber_elem.Update(pd.value_counts(targetDetailNumber)[0])
-		targetDetailNumber_elem.Update("pd.value_counts(targetDetailNumber)[0]")
+		if targetDetailNumber == []:
+		    targetDetailNumber_elem.Update(0)
+		else:
+		    targetDetailNumber_elem.Update(pd.value_counts(targetDetailNumber)[0])
 		targetName_elem.Update(LABELS[0])
     
 	for coordinate in targetPosition:
