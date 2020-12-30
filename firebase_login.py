@@ -83,7 +83,7 @@ def firebaseUploadData(targetPositionObject):
     userUniqueId = "sheldonhuang1994_7822"
     dataCible = {
             "timeStamp":round(time.time()),
-            "targetPosition": targetPositionObject
+            "targetPosition": str(targetPositionObject)
             }
     
     dataUser = {
