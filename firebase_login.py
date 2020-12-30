@@ -8,6 +8,7 @@ import PySimpleGUI as sg
 import binascii
 import pickle
 import sys
+import time
 
 # config = {
 #   "apiKey": "apiKey",
@@ -68,7 +69,7 @@ def firebaseLogin():
     win.Close()
     
 
-def firebaseUploadData():
+def firebaseUploadData(targetPositionObject):
     # Lire des données 读取数据
     firebase = pickle.load(open('firebase_info.txt','rb'))
     user = pickle.load(open('user_info.txt','rb'))
@@ -81,10 +82,8 @@ def firebaseUploadData():
     # Exemple de données 数据样例
     userUniqueId = "sheldonhuang1994_7822"
     dataCible = {
-            "1459361875000":{
-                "poisson":[[111,222],[333,444]],
-                "tortue":[[555,666],[777,888]],
-                }
+            "timeStamp":round(time.time()),
+            "targetPosition": targetPositionObject
             }
     
     dataUser = {

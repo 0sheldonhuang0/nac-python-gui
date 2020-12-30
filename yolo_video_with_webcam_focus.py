@@ -197,9 +197,16 @@ while True:
             
 			targetDetailNumber.append(classIDs[i])
 			targetPosition.append([x+w/2,y+h/2]) # 每一帧的目标数量和位置
-# 			stri = "the length of (%s) is %d, %d, %d, %d" %('runoob',x,y,w,h)
-# 			print(targetPosition)
-# 			print(targetDetailNumber)
+
+			# [[793.0, 517.0], [796.5, 423.0], [841.5, 367.0], [889.5, 499.5], 
+            # [1001.5, 584.0], [254.5, 480.5], [204.0, 420.5], [693.5, 343.5], 
+            # [73.0, 504.0], [123.5, 368.5], [752.0, 280.0], [1017.0, 508.5], 
+            # [1232.0, 683.0], [14.5, 473.5], [398.0, 86.0], [1225.0, 374.5], 
+            # [1097.0, 139.5], [1098.0, 600.5], [61.5, 172.5], [723.0, 140.0], 
+            # [863.0, 174.0]]
+			print(targetPosition)
+            # [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0]
+			print(targetDetailNumber)
 
 			# draw a bounding box rectangle and label on the frame 画出边框和标签
 			color = [int(c) for c in COLORS[classIDs[i]]]
@@ -208,6 +215,20 @@ while True:
 				confidences[i])
 			cv2.putText(frame, text, (x, y - 5),
 				cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    # 组合 targetPositionObject 的数据，以便传送 Start #
+	targetPositionObject = dict() # 构建对象
+	targetDetailNumberUnique = list(set(targetDetailNumber)) # 数组去重
+	targetDetailUnique = []
+	for i in range(len(targetDetailNumberUnique)): # 通过序列索引迭代
+		targetDetailUnique.append(LABELS[targetDetailNumberUnique[i]])
+		targetTemp = [] # 这是个临时的数组，里面将存有每种目标的所有坐标值。
+		for j in range(len(targetDetailNumber)):
+			if targetDetailNumber[j] == targetDetailNumberUnique[i]:
+				targetTemp.append(targetPosition[j])
+        # 更新构建的对象 targetPositionObject
+		targetPositionObject.update({targetDetailUnique[i]:targetTemp})
+	print(targetPositionObject)
+    # 组合 targetPositionObject 的数据，以便传送 End #
 	if write_to_disk:
 		#check if the video writer is None
 		if writer is None:
@@ -281,7 +302,7 @@ while True:
 		if targetDetailNumber == []:
 		    targetDetailNumber_elem.Update(0)
 		else:
-		    targetDetailNumber_elem.Update(pd.value_counts(targetDetailNumber)[0])
+		    targetDetailNumber_elem.Update("pd.value_counts(targetDetailNumber)[0]")
 		targetName_elem.Update(LABELS[0])
 		loopTimes_elem.Update(loopTimes)
     
@@ -319,8 +340,9 @@ while True:
 	time.sleep(1)
 	# 每隔 loopInterval，向 firebase 保存数据
 	loopTimes=loopTimes+1
+
 	if loopTimes % loopInterval == 0:
-		firebase_login.firebaseUploadData()
+		firebase_login.firebaseUploadData(targetPositionObject)
         
 win.Close()
 
