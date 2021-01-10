@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Seule le bibliothèque pyrebase4 suivante
 # peut fonctionner
 # 只有以下的 pyrebase4 的库可以正常运作
@@ -60,6 +61,8 @@ def firebaseLogin():
         user = auth.sign_in_with_email_and_password(UserEmail, UserPassword)
         sg.popup('登录成功！欢迎', UserEmail)
         pickle.dump(user,open('user_info.txt','wb'))
+        userUniqueId = UserEmail.replace("@","__").replace(".","_")
+        pickle.dump(userUniqueId,open('user_id.txt','wb'))        
     except:
         sg.popup('发生了一些错误，可能是用户名/密码错误！')
     
@@ -80,7 +83,7 @@ def firebaseUploadData(targetPositionObject):
     db = firebase.database()
     
     # Exemple de données 数据样例
-    userUniqueId = "sheldonhuang1994_7822"
+    userUniqueId = pickle.load(open('user_id.txt','rb'))
     dataCible = {
             "timeStamp":round(time.time()),
             "targetPosition": str(targetPositionObject)
