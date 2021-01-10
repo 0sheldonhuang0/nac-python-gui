@@ -72,7 +72,7 @@ def firebaseLogin():
     win.Close()
     
 
-def firebaseUploadData(targetPositionObject):
+def firebaseUploadData(targetPositionObject,timeStamp):
     # Lire des données 读取数据
     firebase = pickle.load(open('firebase_info.txt','rb'))
     user = pickle.load(open('user_info.txt','rb'))
@@ -81,11 +81,12 @@ def firebaseUploadData(targetPositionObject):
     # Obtenir une référence au service de base de données
     # 获取对数据库服务的引用
     db = firebase.database()
+    storage = firebase.storage()
     
     # Exemple de données 数据样例
     userUniqueId = pickle.load(open('user_id.txt','rb'))
     dataCible = {
-            "timeStamp":round(time.time()),
+            "timeStamp":timeStamp,
             "targetPosition": str(targetPositionObject)
             }
     
@@ -99,3 +100,5 @@ def firebaseUploadData(targetPositionObject):
     # 使用用户的 ID Tocken 上传 json 数据
     db.child("cibles").child(userUniqueId).push(dataCible, user['idToken'])
     db.child("users").child(userUniqueId).set(dataUser, user['idToken'])
+    
+    storage.child(userUniqueId + "/" + str(timeStamp)).put('image_raw/'+ str(timeStamp) + '.jpg', user['idToken'])
