@@ -320,8 +320,10 @@ while True:
 	loopTimes=loopTimes+1
 
 	if loopTimes % loopInterval == 0:
-		firebase_login.firebaseUploadData(targetPositionObject)
-        
+		timeRightNow = round(time.time());
+		cv2.imwrite('image_raw/'+ str(timeRightNow) + '.jpg',frame) #存储为图像
+		firebase_login.firebaseUploadData(targetPositionObject,timeRightNow)
+
 win.Close()
 
 # release the file pointers

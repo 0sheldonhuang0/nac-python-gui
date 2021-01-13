@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Seule le bibliothèque pyrebase4 suivante
 # peut fonctionner
 # 只有以下的 pyrebase4 的库可以正常运作
@@ -60,6 +61,8 @@ def firebaseLogin():
         user = auth.sign_in_with_email_and_password(UserEmail, UserPassword)
         sg.popup('登录成功！欢迎', UserEmail)
         pickle.dump(user,open('user_info.txt','wb'))
+        userUniqueId = UserEmail.replace("@","__").replace(".","_")
+        pickle.dump(userUniqueId,open('user_id.txt','wb'))        
     except:
         sg.popup('发生了一些错误，可能是用户名/密码错误！')
     
@@ -69,7 +72,7 @@ def firebaseLogin():
     win.Close()
     
 
-def firebaseUploadData(targetPositionObject):
+def firebaseUploadData(targetPositionObject,timeStamp):
     # Lire des données 读取数据
     firebase = pickle.load(open('firebase_info.txt','rb'))
     user = pickle.load(open('user_info.txt','rb'))
@@ -78,11 +81,12 @@ def firebaseUploadData(targetPositionObject):
     # Obtenir une référence au service de base de données
     # 获取对数据库服务的引用
     db = firebase.database()
+    storage = firebase.storage()
     
     # Exemple de données 数据样例
-    userUniqueId = "sheldonhuang1994_7822"
+    userUniqueId = pickle.load(open('user_id.txt','rb'))
     dataCible = {
-            "timeStamp":round(time.time()),
+            "timeStamp":timeStamp,
             "targetPosition": str(targetPositionObject)
             }
     
@@ -96,3 +100,5 @@ def firebaseUploadData(targetPositionObject):
     # 使用用户的 ID Tocken 上传 json 数据
     db.child("cibles").child(userUniqueId).push(dataCible, user['idToken'])
     db.child("users").child(userUniqueId).set(dataUser, user['idToken'])
+    
+    storage.child(userUniqueId + "/" + str(timeStamp)).put('image_raw/'+ str(timeStamp) + '.jpg', user['idToken'])
