@@ -18,12 +18,10 @@ layout = 	[
 		[sg.Text('Test vidéo pour YOLOv4 - NAC', size=(28,1), font=('Helvetica',18),text_color='#1c86ee' ,justification='left'),\
              sg.Image(r'images\nac-logo.png',key = "-WEATHER-IMG-",size=(100, 50))],
 		[sg.Text('Chemin de la vidéo'), sg.In(i_vid,size=(40,1), key='input'), sg.FileBrowse()],
-		[sg.Text('Output'), sg.In(o_vid,size=(40,1), key='output'), sg.FileSaveAs()],
 		[sg.Text('Chemin de la Yolo'), sg.In(y_path,size=(40,1), key='yolo'), sg.FolderBrowse()],
 		[sg.Text('Confiance'), sg.Slider(range=(0,1),orientation='h', resolution=.1, default_value=.5, size=(15,15), key='confidence')],
 		[sg.Text('Seuil'), sg.Slider(range=(0,1), orientation='h', resolution=.1, default_value=.3, size=(15,15), key='threshold')],
 		[sg.Text(' '*8), sg.Checkbox('Utiliser la webcam', key='_WEBCAM_')],
-		[sg.Text(' '*8), sg.Checkbox('Écrire sur le disque', key='_DISK_')],
 		[sg.Button('Connecxion avec votre compte'),sg.OK(), sg.Cancel()]
 			]
 
@@ -36,7 +34,6 @@ if event is None or event =='Cancel':
 	exit()
 if event == 'Connecxion avec votre compte':
  	firebase_login.firebaseLogin()
-write_to_disk = values['_DISK_']
 use_webcam = values['_WEBCAM_']
 args = values
 
@@ -184,9 +181,6 @@ while True:
 # 	print(boxes)
 # 	print(confidences)
 
-
-
-
 	# ensure at least one detection exists 确定每个对象至少有一个框存在
 	if len(idxs) > 0:
 		# loop over the indexes we are keeping 循环画出保存的边框
@@ -229,23 +223,7 @@ while True:
 		targetPositionObject.update({targetDetailUnique[i]:targetTemp})
 	print(targetPositionObject)
     # 组合 targetPositionObject 的数据，以便传送 End #
-	if write_to_disk:
-		#check if the video writer is None
-		if writer is None:
-			# initialize our video writer
-			fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-			writer = cv2.VideoWriter(args["output"], fourcc, 30,
-				(frame.shape[1], frame.shape[0]), True)
 
-			# some information on processing single frame
-			if total > 0:
-				elap = (end - start)
-				print("[INFO] single frame took {:.4f} seconds".format(elap))
-				print("[INFO] estimated total time to finish: {:.4f}".format(
-					elap * total))
-
-		#write the output frame to disk
-		writer.write(frame)
 	imgbytes = cv2.imencode('.png', frame)[1].tobytes()  # ditto
 
 	if not win_started: # if win_started is not None
@@ -299,10 +277,10 @@ while True:
 		image_elem.Update(data=imgbytes)
 		position_elem.Update(targetPosition)
 		number_elem.Update(len(targetPosition))
-		if targetDetailNumber == []:
+		if len(targetDetailNumber) == 0:
 		    targetDetailNumber_elem.Update(0)
 		else:
-		    targetDetailNumber_elem.Update("pd.value_counts(targetDetailNumber)[0]")
+		    targetDetailNumber_elem.Update(pd.value_counts(targetDetailNumber)[0])
 		targetName_elem.Update(LABELS[0])
 		loopTimes_elem.Update(loopTimes)
     
@@ -337,7 +315,7 @@ while True:
 	gui_threshold = values['threshold']
     
 	# 每隔 time.sleep(1)，识别一次
-	time.sleep(1)
+	##time.sleep(1)
 	# 每隔 loopInterval，向 firebase 保存数据
 	loopTimes=loopTimes+1
 
