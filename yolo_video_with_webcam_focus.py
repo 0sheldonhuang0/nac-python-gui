@@ -1,6 +1,5 @@
-# YOLO object detection using a webcam
-# Exact same demo as the read from disk, but instead of disk a webcam is used.
-# import the necessary packages
+# -*- coding: utf-8 -*-
+# 导入必要的包
 import numpy as np
 import imutils
 import time
@@ -47,51 +46,47 @@ gui_threshold = args["threshold"]
 labelsPath = os.path.sep.join([args["yolo"], "coco.names"])
 LABELS = open(labelsPath).read().strip().split("\n") #打开标签
 
-# initialize a list of colors to represent each possible class label 
 # 每个对象配备了不一样的颜色，以便在图片中标记时便于区分。
 np.random.seed(42)
 COLORS = np.random.randint(0, 255, size=(len(LABELS), 3),
 	dtype="uint8")
 
-# derive the paths to the YOLO weights and model configuration
+# 加载 YOLO weight 和 Config 文件
 weightsPath = os.path.sep.join([args["yolo"], "custom-yolov4-detector_final.weights"])
 configPath = os.path.sep.join([args["yolo"], "custom-yolov4-detector.cfg"])
 
-# load our YOLO object detector trained on COCO dataset (80 classes)
-# and determine only the *output* layer names that we need from YOLO
+# 加载 YOLO 文件
 print("[INFO] loading YOLO from disk...")
 net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
 ln = net.getLayerNames()
 ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
-# initialize the video stream, pointer to output video file, and
-# frame dimensions
+# 初始化视频，输出视频的帧率和画面尺寸
 vs = cv2.VideoCapture(args["input"])
 writer = None
 (W, H) = (None, None)
 
-# try to determine the total number of frames in the video file
+# 确定视频中的帧总数
 try:
 	prop = cv2.cv.CV_CAP_PROP_FRAME_COUNT if imutils.is_cv2() \
 		else cv2.CAP_PROP_FRAME_COUNT
 	total = int(vs.get(prop))
 	print("[INFO] {} total frames in video".format(total))
 
-# an error occurred while trying to determine the total
-# number of frames in the video file
+# 如果出现了错误，那么：
 except:
 	print("[INFO] could not determine # of frames in video")
 	print("[INFO] no approx. completion time can be provided")
 	total = -1
 
-# loop over frames from the video file stream
+# 循环读取视频帧
 win_started = False
 loopTimes = 1; loopInterval = 50;
 if use_webcam:
 	cap = cv2.VideoCapture(0)
 
 while True:
-	# read the next frame from the file or webcam
+	# 读取视频或者摄像头中下一帧的数据
 	if use_webcam:
 		grabbed, frame = cap.read()
 	else:
@@ -101,18 +96,15 @@ while True:
 		# 分辨率-高度
 		zone_height = int(vs.get(cv2.CAP_PROP_FRAME_HEIGHT))/2
 
-	# if the frame was not grabbed, then we have reached the end
-	# of the stream
+	# 如果没有抓取到帧，那就说明已经到底了
 	if not grabbed:
 		break
 
-	# if the frame dimensions are empty, grab them
+	# 如果每帧图片尺寸为空，那抓取它
 	if W is None or H is None:
 		(H, W) = frame.shape[:2]
-
-	# construct a blob from the input frame and then perform a forward
-	# pass of the YOLO object detector, giving us our bounding boxes
-	# and associated probabilities
+    # 从输入图像构造一个 blob，然后执行 YOLO 对象检测器的前向传递
+    # 得出边界和概率
 	blob = cv2.dnn.blobFromImage(frame, 1 / 255.0, (416, 416),
 		swapRB=True, crop=False)
 	net.setInput(blob)
@@ -120,72 +112,49 @@ while True:
 	layerOutputs = net.forward(ln)
 	end = time.time()
 
-	# initialize our lists of detected bounding boxes, confidences,
-	# and class IDs, respectively
+    # 初始化边界框、置信度、目标种类的数组
 	boxes = []
 	confidences = []
 	classIDs = []
 
-	# loop over each of the layer outputs 循环提取每个输出层
+	# 循环提取每个输出层
 	for output in layerOutputs:
-		# loop over each of the detections 循环提取每个框
+		# 循环提取每个框
 		for detection in output:
-			# extract the class ID and confidence (i.e., probability) 提取当前目标的类 ID 和置信度
-			# of the current object detection
+			# 提取当前目标的类 ID 和置信度
 			scores = detection[5:]
 			classID = np.argmax(scores)
 			confidence = scores[classID]
 
-			# filter out weak predictions by ensuring the detected
-			# probability is greater than the minimum probability
-            # 通过确保检测概率大于最小概率来过滤弱预测
+            # 通过确保检测概率大于最小概率来过滤较不精确的预测
 			if confidence > gui_confidence:
-				# scale the bounding box coordinates back relative to
-				# the size of the image, keeping in mind that YOLO
-				# actually returns the center (x, y)-coordinates of
-				# the bounding box followed by the boxes' width and
-				# height
                 # 将边界框坐标相对于图像的大小进行缩放，YOLO 返回的是边界框的中心(x, y)坐标，
                 # 后面是边界框的宽度和高度
 				box = detection[0:4] * np.array([W, H, W, H])
 				(centerX, centerY, width, height) = box.astype("int")
 
-				# use the center (x, y)-coordinates to derive the top
-				# and and left corner of the bounding box
                 # 转换出边框左上角坐标
 				x = int(centerX - (width / 2))
 				y = int(centerY - (height / 2))
 
-				# update our list of bounding box coordinates,
-				# confidences, and class IDs
-                # 更新边界框坐标、置信度和类 id 的列表
-                # boxes：对象的边界框
-                # confidences ：YOLO 分配给对象的置信度值，较低的置信度值表示该对象可能不是网络认为的对象。
-                # classIDs：检测到的对象的类标签
+                # 更新边界框坐标、置信度和种类 id 的列表
 				boxes.append([x, y, int(width), int(height)])
 				confidences.append(float(confidence))
 				classIDs.append(classID)
 
-	# apply non-maxima suppression to suppress weak, overlapping
-	# bounding boxes 非最大值抑制，确定唯一边框
-    # bboxes：一组边框
-    # scores：一组对应的置信度
-    # score_threshold：置信度的阈值
-    # nms_threshold：非最大抑制的阈值
+
+    # gui_confidence：置信度的阈值
+    # gui_threshold：非最大抑制的阈值（调整容错率）
 	idxs = cv2.dnn.NMSBoxes(boxes, confidences, gui_confidence, gui_threshold)
 	targetPosition = []
 	targetDetailNumber = []
 	zone_info = []
-    
-# 	print('idxs.flatten() 的长度为 %d，内容为 %s' %(len(idxs.flatten()),idxs.flatten()))
-# 	print(boxes)
-# 	print(confidences)
 
-	# ensure at least one detection exists 确定每个对象至少有一个框存在
+	# 确定每个对象至少有一个框存在
 	if len(idxs) > 0:
-		# loop over the indexes we are keeping 循环画出保存的边框
+		# 循环画出保存的边框
 		for i in idxs.flatten():
-			# extract the bounding box coordinates 提取坐标和宽度
+			# 提取坐标和宽度
 			(x, y) = (boxes[i][0], boxes[i][1])
 			(w, h) = (boxes[i][2], boxes[i][3])
             
@@ -202,7 +171,7 @@ while True:
             # [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0]
 			print(targetDetailNumber)
 
-			# draw a bounding box rectangle and label on the frame 画出边框和标签
+			# 画出边框和标签
 			color = [int(c) for c in COLORS[classIDs[i]]]
 			cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
 			text = "{}: {:.4f}".format(LABELS[classIDs[i]],
@@ -326,7 +295,6 @@ while True:
 
 win.Close()
 
-# release the file pointers
 print("[INFO] cleaning up...")
 writer.release() if writer is not None else None
 vs.release()

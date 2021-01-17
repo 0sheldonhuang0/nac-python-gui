@@ -9,14 +9,6 @@ import PySimpleGUI as sg
 import binascii
 import pickle
 import sys
-import time
-
-# config = {
-#   "apiKey": "apiKey",
-#   "authDomain": "projectId.firebaseapp.com",
-#   "databaseURL": "https://fir-rtc-aff50-default-rtdb.firebaseio.com/",
-#   "storageBucket": "projectId.appspot.com"
-# }
 
 def firebaseLogin():
     firebaseConfig = {
